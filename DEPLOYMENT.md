@@ -19,20 +19,37 @@ Settings:
 
 `client/client/vercel.json` already provides the React Router fallback.
 
-## Backend: Render or Railway
+## Backend: Vercel
 
-Deploy this folder as a Node.js web service:
+Create a separate Vercel project for the backend and use this folder as its project root:
 
 ```text
-server
+Workforce-backend/server
 ```
 
-Commands:
+The included `server/vercel.json` configures the Express app as a Vercel Node function. Leave the build command empty or use the default, and do not use `npm start` as the production command.
 
-- Build command: `npm install`
-- Start command: `npm start`
+Set these variables in Vercel Project Settings > Environment Variables. Use a MongoDB Atlas URI whose network access allows Vercel:
 
-Set the variables from `server/.env.example` in the hosting provider dashboard. Do not upload `server/.env`.
+```text
+MONGO_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_long_random_production_secret
+JWT_EXPIRES_IN=1d
+CLIENT_URL=https://YOUR-FRONTEND-DOMAIN.vercel.app
+NODE_ENV=production
+TIMEZONE=Asia/Karachi
+SETUP_SECRET=your_setup_secret
+```
+
+Do not upload `server/.env` or commit production secrets.
+
+After deployment, verify:
+
+```text
+https://YOUR-BACKEND-DOMAIN.vercel.app/api/health
+```
+
+The response should be JSON with `success: true` and `database: "connected"`.
 
 After the backend gets a public URL, set:
 
