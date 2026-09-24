@@ -432,3 +432,44 @@
     width: 100%;
   }
 }
+
+/* ==== RESPONSIVE ENHANCEMENTS ==== */
+/* Fluid type scaling */
+html { font-size: clamp(14px, 1.2vw, 18px); }
+
+/* Auth page – ensure card never overflows on very small screens */
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem; max-width: 100%; }
+  .auth-page { padding: 1rem; }
+}
+
+/* Metric cards – increase columns on larger screens, collapse to single column on narrow */
+@media (min-width: 1440px) {
+  .metrics-grid { grid-template-columns: repeat(4, minmax(240px, 1fr)); }
+}
+@media (max-width: 767px) {
+  .metrics-grid { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+}
+
+/* Kanban board – stack columns on small devices */
+@media (max-width: 767px) {
+  .kanban-board { grid-template-columns: 1fr; }
+}
+
+/* Navbar adjustments for very small screens */
+@media (max-width: 380px) {
+  .nav-left h1 { font-size: 14px; }
+  .nav-right { gap: 8px; }
+}
+
+/* Ensure sidebar overlay covers full screen on all breakpoints */
+.sidebar-overlay { position: fixed; inset: 0; }
+
+/* Minor spacing tweaks for mobile */
+@media (max-width: 560px) {
+  .page-header { gap: 8px; }
+  .page-header h2 { font-size: 20px; }
+}
