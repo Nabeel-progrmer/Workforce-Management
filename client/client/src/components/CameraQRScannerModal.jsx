@@ -1,64 +1,86 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { Camera, ShieldCheck } from "lucide-react";
+import { Camera, ShieldCheck, Loader2 } from "lucide-react";
 
 export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess }) {
   const [activeTab, setActiveTab] = useState("camera"); // "camera" | "upload"
   const [errorMsg, setErrorMsg] = useState("");
+  const [loadingCam, setLoadingCam] = useState(false);
   const html5QrCodeRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Helper: start camera using MediaDevices API with proper permissions handling
-  const startCamera = async (cameraIdOrConstraint = null) => {
+  // -------------------------------------------------------
+  // Helper: request camera permission (mobile‑friendly)
+  // -------------------------------------------------------
+  const requestCamera = async () => {
     try {
-      setErrorMsg("");
-      // Request permission first (helps on iOS Safari)
-      await navigator.mediaDevices.getUserMedia({ video: true });
-    } catch (permErr) {
-      console.warn("Camera permission denied or unavailable", permErr);
-      setErrorMsg("Camera access denied. Use the file upload fallback.");
+      const constraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Immediately stop – we only needed the permission prompt
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch (e) {
+      console.warn("Camera permission request failed", e);
+      setErrorMsg(
+        "Camera permission denied or not supported. Use the file‑upload fallback."
+      );
+      return false;
+    }
+  };
+
+  // -------------------------------------------------------
+  // Start scanning via html5‑qrcode library
+  // -------------------------------------------------------
+  const startCamera = async (cameraIdOrConstraint = null) => {
+    setErrorMsg("");
+    setLoadingCam(true);
+    const permissionGranted = await requestCamera();
+    if (!permissionGranted) {
+      setLoadingCam(false);
       return;
     }
-
     try {
       if (!html5QrCodeRef.current) {
         html5QrCodeRef.current = new Html5Qrcode("qr-reader-viewport");
       }
-
-      // Stop any existing stream
+      // Stop any previous scan
       if (html5QrCodeRef.current.isScanning) {
         await html5QrCodeRef.current.stop();
       }
-
-      const cameraConfig =
-        cameraIdOrConstraint ||
-        { facingMode: "environment" };
-
+      const cameraConfig = cameraIdOrConstraint || { facingMode: "environment" };
       await html5QrCodeRef.current.start(
         cameraConfig,
         {
-          fps: 10,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const size = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.72);
-            return {
-              width: Math.max(180, Math.min(size, 300)),
-              height: Math.max(180, Math.min(size, 300))
-            };
+          fps: 12,
+          qrbox: (vw, vh) => {
+            const size = Math.floor(Math.min(vw, vh) * 0.7);
+            return { width: size, height: size };
           },
-          aspectRatio: 1.333333,
-          videoConstraints: { facingMode: "environment" }
+          videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         },
         (decodedText) => {
           onScanSuccess(decodedText);
           stopCamera();
         },
         (errorMessage) => {
-          // ignoring per‑frame errors
+          // ignore per‑frame errors to keep console clean
         }
       );
     } catch (err) {
-      console.error("Camera start error:", err);
-      setErrorMsg("Failed to start the camera. Use the file upload fallback.");
+      console.error("Camera start error", err);
+      setErrorMsg("Failed to start the camera. Try the upload fallback.");
+    } finally {
+      setLoadingCam(false);
     }
   };
 
@@ -72,7 +94,7 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
     }
   };
 
-  // Open camera when modal becomes visible and the camera tab is active
+  // Open camera when modal becomes visible & camera tab active
   useEffect(() => {
     if (isOpen && activeTab === "camera") {
       startCamera();
@@ -82,7 +104,9 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
     };
   }, [isOpen, activeTab]);
 
-  // File‑input fallback – reads image and feeds it to Html5Qrcode manually
+  // -------------------------------------------------------
+  // File‑input fallback – scan static image
+  // -------------------------------------------------------
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -93,7 +117,6 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      // Html5Qrcode has a method "scanFile" for static images
       if (!html5QrCodeRef.current) {
         html5QrCodeRef.current = new Html5Qrcode("qr-reader-viewport");
       }
@@ -106,7 +129,7 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Failed to process the image file.");
+      setErrorMsg("Failed to read the image file.");
     }
   };
 
@@ -114,7 +137,7 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-full overflow-y-auto shadow-lg">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-full overflow-y-auto shadow-xl">
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold flex items-center space-x-2">
             <Camera size={20} />
@@ -153,7 +176,14 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
 
           {/* Camera view */}
           {activeTab === "camera" && (
-            <div id="qr-reader-viewport" className="w-full h-64" />
+            <div className="relative w-full h-64">
+              {loadingCam && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                  <Loader2 className="animate-spin text-blue-600" size={32} />
+                </div>
+              )}
+              <div id="qr-reader-viewport" className="w-full h-full" />
+            </div>
           )}
 
           {/* File upload fallback */}
@@ -168,7 +198,7 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
                 className="mt-2 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
               />
               <p className="mt-2 text-sm text-gray-500">
-                Take a photo of a QR code or select an existing image.
+                Capture a photo of a QR code or choose an existing image.
               </p>
             </div>
           )}
