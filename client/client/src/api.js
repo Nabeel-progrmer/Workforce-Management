@@ -1,9 +1,11 @@
 import axios from "axios";
 
+const defaultApiUrl = import.meta.env.DEV
+  ? "http://localhost:5000/api"
+  : "https://workforce-backen-git-670f96-nabeelnabeelfaisal26-2848s-projects.vercel.app/api";
+
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || defaultApiUrl,
   headers: {
     "Content-Type": "application/json"
   }
