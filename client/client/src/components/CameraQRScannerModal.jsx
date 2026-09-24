@@ -29,7 +29,6 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
     }
     // existing logic follows
     if (isOpen) {
-    if (isOpen) {
       enumerateCameras();
     } else {
       stopCamera();
