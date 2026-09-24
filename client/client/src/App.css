@@ -193,6 +193,12 @@
   z-index: 90;
 }
 
+/* Responsive adjustments for medium screens */
+@media (max-width: 1280px) {
+  .sidebar { width: 200px; }
+  .main-wrapper { margin-left: 200px; }
+}
+
 .nav-left h1 {
   font-size: 20px;
   font-weight: 800;
