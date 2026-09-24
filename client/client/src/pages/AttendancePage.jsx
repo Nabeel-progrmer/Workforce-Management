@@ -1,76 +1,107 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Clock, QrCode, RefreshCw, Search, ShieldCheck, Upload } from "lucide-react";
-import jsQR from "jsqr";
+import { Camera, Clock, QrCode, Search, ShieldCheck } from "lucide-react";
 import { useAuth } from "../App";
 import api from "../api";
 import CameraQRScannerModal from "../components/CameraQRScannerModal";
 
-// ---- Constants -----------------------------------------------------------
-const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-// ---- Utility Functions ----------------------------------------------------
-const getErrorMessage = (error, fallback = "Something went wrong.") =>
-  error?.response?.data?.message || error?.message || fallback;
-
-const isWithinLast24Hours = (record) => {
-  const timestamp = record?.checkIn || record?.createdAt;
-  if (!timestamp) return false;
-  const time = new Date(timestamp).getTime();
-  return Number.isFinite(time) && Date.now() - time < TWENTY_FOUR_HOURS;
+const getErrorMessage = (error, fallback = "Something went wrong.") => {
+  return (
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
 };
 
-const formatTime = (value) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const getTodayKey = () => new Date().toISOString().slice(0, 10);
+
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+
+  const hasTouch =
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0;
+
+  const smallViewport = window.matchMedia("(max-width: 768px)").matches;
+
+  const mobileUA =
+    /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(
+      navigator.userAgent || ""
+    );
+
+  return hasTouch || smallViewport || mobileUA;
 };
 
-const formatDate = (value) => {
-  if (!value) return "—";
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });
-};
-
-const statusClass = (status) =>
-  status === "Completed" ? "badge badge-emerald" : "badge badge-amber";
-
-// ---- Main Component -------------------------------------------------------
 export default function AttendancePage() {
-  // ----- Auth & Role -----------------------------------------------------
   const { user } = useAuth();
-  const role = user?.role?.toLowerCase() || "";
-  const isExecutive = role === "ceo" || role === "manager";
-  const isWorker = role === "worker";
 
-  // ----- Local State ------------------------------------------------------
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scanLoading, setScanLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [manualToken, setManualToken] = useState("");
-  const [message, setMessage] = useState("");
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const fileInputRef = useRef(null);
+  const [scanLoading, setScanLoading] = useState(false);
 
-  // ----- Data Fetch -------------------------------------------------------
+  const [manualToken, setManualToken] = useState("");
+  const [scanMsg, setScanMsg] = useState("");
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const autoCameraOpenedRef = useRef(false);
+
+  const role = user?.role?.toLowerCase() || "";
+
+  const isExecutive = useMemo(
+    () => ["ceo", "manager"].includes(role),
+    [role]
+  );
+
+  const isWorker = role === "worker";
+
+  /* ---------------------------------------------
+     Detect mobile responsively
+  --------------------------------------------- */
+  useEffect(() => {
+    const updateMobileState = () => {
+      setIsMobile(isMobileDevice());
+    };
+
+    updateMobileState();
+
+    window.addEventListener("resize", updateMobileState);
+
+    return () => {
+      window.removeEventListener("resize", updateMobileState);
+    };
+  }, []);
+
+  /* ---------------------------------------------
+     Fetch attendance
+  --------------------------------------------- */
   const fetchAttendance = useCallback(async () => {
     if (!user) return;
+
     try {
       setLoading(true);
-      setMessage("");
-      const endpoint = isExecutive ? "/workforce/attendance" : "/workforce/attendance/my";
-      const response = await api.get(endpoint);
-      const records = Array.isArray(response.data?.attendance)
-        ? response.data.attendance
-        : [];
-      setAttendance(records);
+
+      const endpoint = isExecutive
+        ? "/workforce/attendance"
+        : "/workforce/attendance/my";
+
+      const res = await api.get(endpoint);
+
+      if (res.data?.success) {
+        setAttendance(res.data.attendance || []);
+      } else {
+        setAttendance([]);
+      }
     } catch (error) {
-      console.error("Fetch attendance error:", error);
-      setMessage(`❌ ${getErrorMessage(error, "Unable to load attendance.")}`);
+      console.error("Attendance fetch error:", error);
+
+      setScanMsg(
+        getErrorMessage(
+          error,
+          "Unable to load attendance records."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -80,265 +111,266 @@ export default function AttendancePage() {
     fetchAttendance();
   }, [fetchAttendance]);
 
-  // ----- Filtering (last 24h) --------------------------------------------
-  const visibleAttendance = useMemo(
-    () => attendance.filter(isWithinLast24Hours),
-    [attendance]
-  );
+  /* ---------------------------------------------
+     Mobile executive camera
+     Opens only once.
+  --------------------------------------------- */
+  useEffect(() => {
+    if (!user || !isExecutive || !isMobile) return;
 
-  // ----- Current worker's active record -----------------------------------
-  const currentWorkerRecord = useMemo(() => {
+    if (!autoCameraOpenedRef.current) {
+      autoCameraOpenedRef.current = true;
+      setIsCameraOpen(true);
+    }
+  }, [user, isExecutive, isMobile]);
+
+  /* ---------------------------------------------
+     Today's attendance for current worker
+  --------------------------------------------- */
+  const todayRecord = useMemo(() => {
     if (!isWorker) return null;
-    return (
-      visibleAttendance.find(
-        (record) =>
-          String(record.worker?._id || record.worker) ===
-          String(user?._id || user?.id)
-      ) || visibleAttendance[0] ||
-      null
-    );
-  }, [visibleAttendance, isWorker, user]);
 
-  // ----- Worker actions ----------------------------------------------------
+    const today = getTodayKey();
+
+    return (
+      attendance.find((record) => record.date === today) || null
+    );
+  }, [attendance, isWorker]);
+
+  /* ---------------------------------------------
+     Worker self check-in
+  --------------------------------------------- */
   const handleSelfCheckIn = async () => {
     if (!isWorker || actionLoading) return;
+
     try {
       setActionLoading(true);
-      setMessage("");
-      const response = await api.post("/workforce/attendance/check-in");
-      setMessage(`✅ ${response.data?.message || "Check‑in successful."}`);
+      setScanMsg("");
+
+      const res = await api.post(
+        "/workforce/attendance/check-in"
+      );
+
+      setScanMsg(
+        `✅ ${
+          res.data?.message || "Check-in recorded successfully."
+        }`
+      );
+
       await fetchAttendance();
     } catch (error) {
-      console.error("Self check‑in error:", error);
-      setMessage(`❌ ${getErrorMessage(error, "Unable to check in.")}`);
+      console.error("Self check-in error:", error);
+
+      setScanMsg(
+        `❌ ${getErrorMessage(
+          error,
+          "Unable to record check-in."
+        )}`
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
+  /* ---------------------------------------------
+     Worker self check-out
+  --------------------------------------------- */
   const handleSelfCheckOut = async () => {
     if (!isWorker || actionLoading) return;
+
     try {
       setActionLoading(true);
-      setMessage("");
-      const response = await api.post("/workforce/attendance/check-out");
-      setMessage(`✅ ${response.data?.message || "Check‑out successful."}`);
+      setScanMsg("");
+
+      const res = await api.post(
+        "/workforce/attendance/check-out"
+      );
+
+      setScanMsg(
+        `✅ ${
+          res.data?.message || "Check-out recorded successfully."
+        }`
+      );
+
       await fetchAttendance();
     } catch (error) {
-      console.error("Self check‑out error:", error);
-      setMessage(`❌ ${getErrorMessage(error, "Unable to check out.")}`);
+      console.error("Self check-out error:", error);
+
+      setScanMsg(
+        `❌ ${getErrorMessage(
+          error,
+          "Unable to record check-out."
+        )}`
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
-  // ----- QR processing (executive only) ------------------------------------
-  const processScanToken = async (rawToken) => {
-    const token = String(rawToken || "").trim();
-    if (!token) {
-      setMessage("❌ No valid QR token was found.");
-      return;
-    }
+  /* ---------------------------------------------
+     Executive QR scan
+  --------------------------------------------- */
+  const processScanToken = async (tokenString) => {
+    const token = String(tokenString || "").trim();
+
+    if (!token || scanLoading) return;
+
     if (!isExecutive) {
-      setMessage("❌ Only CEO or Manager can scan worker QR codes.");
+      setScanMsg(
+        "❌ Only CEO or Manager accounts can scan worker QR badges."
+      );
       return;
     }
-    if (scanLoading) return;
+
     try {
       setScanLoading(true);
-      setMessage("");
-      const response = await api.post("/workforce/attendance/check-in", { qrToken: token });
-      setMessage(`✅ ${response.data?.message || "Worker attendance recorded successfully."}`);
+      setScanMsg("");
+
+      const res = await api.post(
+        "/workforce/attendance/check-in",
+        {
+          qrToken: token
+        }
+      );
+
+      setScanMsg(
+        `✅ ${
+          res.data?.message ||
+          "Attendance check-in completed successfully."
+        }`
+      );
+
       setManualToken("");
+
       await fetchAttendance();
     } catch (error) {
-      console.error("QR check‑in error:", error);
-      setMessage(`❌ ${getErrorMessage(error, "Invalid or unrecognized QR code.")}`);
+      console.error("QR attendance error:", error);
+
+      setScanMsg(
+        `❌ ${getErrorMessage(
+          error,
+          "Invalid or unrecognized QR token."
+        )}`
+      );
     } finally {
       setScanLoading(false);
     }
   };
 
-  const handleCameraScan = async (token) => {
-    setIsCameraOpen(false);
+  /* ---------------------------------------------
+     Manual executive token submission
+  --------------------------------------------- */
+  const handleManualSubmit = async (event) => {
+    event.preventDefault();
+
+    const token = manualToken.trim();
+
+    if (!token || scanLoading) return;
+
     await processScanToken(token);
   };
 
-  const handleManualSubmit = async (e) => {
-    e.preventDefault();
-    if (!manualToken.trim()) {
-      setMessage("❌ Please enter a QR token.");
+  /* ---------------------------------------------
+     QR modal success
+  --------------------------------------------- */
+  const handleScanSuccess = async (token) => {
+    setIsCameraOpen(false);
+
+    if (!token) {
+      setScanMsg("❌ No QR token was detected.");
       return;
     }
-    await processScanToken(manualToken);
+
+    await processScanToken(token);
   };
 
-  // ----- QR image upload ---------------------------------------------------
-  const handleQRUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    if (!isExecutive) {
-      setMessage("❌ Only CEO or Manager can upload worker QR codes.");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      setMessage("❌ Please upload a valid image.");
-      return;
-    }
-    setScanLoading(true);
-    setMessage("");
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const maxDim = 1800;
-          let { naturalWidth: w, naturalHeight: h } = img;
-          if (w > maxDim || h > maxDim) {
-            const scale = Math.min(maxDim / w, maxDim / h);
-            w = Math.round(w * scale);
-            h = Math.round(h * scale);
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
-          if (!ctx) throw new Error("Canvas not supported");
-          ctx.drawImage(img, 0, 0, w, h);
-          const imgData = ctx.getImageData(0, 0, w, h);
-          const result = jsQR(imgData.data, imgData.width, imgData.height, {
-            inversionAttempts: "attemptBoth",
-          });
-          if (!result?.data) {
-            setMessage("❌ No readable QR code found in this image.");
-            setScanLoading(false);
-            return;
-          }
-          setScanLoading(false);
-          processScanToken(result.data);
-        } catch (err) {
-          console.error("QR upload processing error:", err);
-          setMessage("❌ Could not process this QR image.");
-          setScanLoading(false);
-        }
-      };
-      img.onerror = () => {
-        setMessage("❌ Could not open the uploaded image.");
-        setScanLoading(false);
-      };
-      img.src = reader.result;
-    };
-    reader.onerror = () => {
-      setMessage("❌ Could not read the uploaded image.");
-      setScanLoading(false);
-    };
-    reader.readAsDataURL(file);
+  /* ---------------------------------------------
+     Close camera
+  --------------------------------------------- */
+  const handleCloseCamera = () => {
+    setIsCameraOpen(false);
   };
 
-  // ----- Render ------------------------------------------------------------
+  const getStatusClass = (status) => {
+    return status === "Completed"
+      ? "badge badge-emerald"
+      : "badge badge-amber";
+  };
+
+  const formatTime = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleDateString([], {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  };
+
   return (
-    <div className="attendance-page" style={{ width: "100%", maxWidth: "100%" }}>
-      {/* Header */}
+    <div className="attendance-page">
+      {/* -----------------------------------------
+          Header
+      ------------------------------------------ */}
       <div className="page-header">
-        <div style={{ minWidth: 0 }}>
-          <span className="badge badge-sky" style={{ marginBottom: 8 }}>
-            REAL‑TIME ATTENDANCE
+        <div>
+          <span
+            className="badge badge-sky"
+            style={{ marginBottom: 8 }}
+          >
+            REAL-TIME ATTENDANCE TERMINAL
           </span>
+
           <h2>Attendance Log & QR Scanner</h2>
+
           <p>
             {isExecutive
-              ? "Scan worker QR badges with your camera or upload a QR image."
-              : "Manage your check‑in, check‑out and recent attendance."}
+              ? "Scan worker QR badges with your camera or use the manual token fallback."
+              : "Review your attendance and manage today's check-in and check-out."}
           </p>
         </div>
+
         {isExecutive && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="btn btn-sky"
-              onClick={() => setIsCameraOpen(true)}
-              disabled={scanLoading}
-            >
-              <Camera size={18} /> Open Camera
-            </button>
-            <label
-              className="btn btn-glass"
-              style={{
-                cursor: scanLoading ? "not-allowed" : "pointer",
-                opacity: scanLoading ? 0.6 : 1,
-              }}
-            >
-              <Upload size={18} /> Upload QR
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                disabled={scanLoading}
-                onChange={handleQRUpload}
-                ref={fileInputRef}
-              />
-            </label>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCameraOpen(true)}
+            className="btn btn-sky"
+            disabled={scanLoading}
+          >
+            <Camera size={18} />
+            {scanLoading
+              ? "Processing..."
+              : "Launch Camera Scanner"}
+          </button>
         )}
       </div>
 
-      {/* Worker Self‑Attendance */}
+      {/* -----------------------------------------
+          Worker Self Attendance
+      ------------------------------------------ */}
       {isWorker && (
-        <div className="bento-card" style={{ marginBottom: 24, padding: 24 }}>
-          <span className="badge badge-sky" style={{ marginBottom: 8 }}>
-            MY ATTENDANCE
-          </span>
-          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
-            {currentWorkerRecord
-              ? currentWorkerRecord.checkOut
-                ? "Today's attendance completed"
-                : "You are currently checked in"
-              : "You are not checked in"}
-          </h3>
-          <p style={{ marginTop: 6, color: "var(--text-muted)" }}>
-            {currentWorkerRecord
-              ? `Check‑in: ${formatTime(currentWorkerRecord.checkIn)}${
-                  currentWorkerRecord.checkOut
-                    ? ` • Check‑out: ${formatTime(currentWorkerRecord.checkOut)}`
-                    : ""
-                }`
-              : "Use the button below to check in."}
-          </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
-            {!currentWorkerRecord && (
-              <button
-                type="button"
-                className="btn btn-emerald"
-                onClick={handleSelfCheckIn}
-                disabled={actionLoading}
-              >
-                <Clock size={18} />
-                {actionLoading ? "Processing..." : "Check In"}
-              </button>
-            )}
-            {currentWorkerRecord && !currentWorkerRecord.checkOut && (
-              <button
-                type="button"
-                className="btn btn-sky"
-                onClick={handleSelfCheckOut}
-                disabled={actionLoading}
-              >
-                <Clock size={18} />
-                {actionLoading ? "Processing..." : "Check Out"}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Executive QR Card */}
-      {isExecutive && (
         <div
           className="bento-card"
           style={{
             marginBottom: 24,
-            background: "linear-gradient(135deg, rgba(12,19,34,.96), rgba(21,32,53,.92))",
+            padding: 24
           }}
         >
           <div
@@ -346,107 +378,210 @@ export default function AttendancePage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: 18,
-              flexWrap: "wrap",
+              gap: 20,
+              flexWrap: "wrap"
+            }}
+          >
+            <div>
+              <span
+                className="badge badge-sky"
+                style={{ marginBottom: 8 }}
+              >
+                YOUR ATTENDANCE
+              </span>
+
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 20,
+                  fontWeight: 800
+                }}
+              >
+                {todayRecord
+                  ? todayRecord.checkOut
+                    ? "Today's attendance completed"
+                    : "You are currently checked in"
+                  : "You have not checked in today"}
+              </h3>
+
+              <p
+                style={{
+                  marginTop: 6,
+                  color: "var(--text-muted)",
+                  fontSize: 13
+                }}
+              >
+                {todayRecord
+                  ? `Check-in: ${formatTime(todayRecord.checkIn)}`
+                  : "Use the button below to record your check-in."}
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap"
+              }}
+            >
+              {!todayRecord && (
+                <button
+                  type="button"
+                  className="btn btn-emerald"
+                  onClick={handleSelfCheckIn}
+                  disabled={actionLoading}
+                >
+                  <Clock size={18} />
+
+                  {actionLoading
+                    ? "Processing..."
+                    : "Check In"}
+                </button>
+              )}
+
+              {todayRecord &&
+                !todayRecord.checkOut && (
+                  <button
+                    type="button"
+                    className="btn btn-sky"
+                    onClick={handleSelfCheckOut}
+                    disabled={actionLoading}
+                  >
+                    <Clock size={18} />
+
+                    {actionLoading
+                      ? "Processing..."
+                      : "Check Out"}
+                  </button>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* -----------------------------------------
+          Executive QR Scanner
+      ------------------------------------------ */}
+      {isExecutive && (
+        <div
+          className="bento-card"
+          style={{
+            marginBottom: 28,
+            background:
+              "linear-gradient(135deg, rgba(12, 19, 34, 0.96) 0%, rgba(21, 32, 53, 0.92) 100%)"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 20,
+              flexWrap: "wrap"
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
-                minWidth: 0,
+                gap: 16,
+                minWidth: 0
               }}
             >
               <div className="metric-icon icon-sky">
-                <QrCode size={25} />
+                <QrCode size={26} />
               </div>
+
               <div style={{ minWidth: 0 }}>
                 <h3
                   style={{
                     margin: 0,
                     fontSize: 20,
                     fontWeight: 800,
-                    color: "#f8fafc",
+                    color: "#f8fafc"
                   }}
                 >
                   Worker QR Verification
                 </h3>
+
                 <p
                   style={{
-                    marginTop: 4,
-                    color: "#94a3b8",
                     fontSize: 13,
+                    color: "#94a3b8",
+                    marginTop: 4,
+                    lineHeight: 1.5
                   }}
                 >
-                  Scan a worker badge or upload a QR image.
+                  Scan a worker's QR badge using your device camera.
                 </p>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="btn btn-emerald"
-                onClick={() => setIsCameraOpen(true)}
-                disabled={scanLoading}
-              >
-                <Camera size={19} /> Camera
-              </button>
-              <label
-                className="btn btn-glass"
-                style={{
-                  cursor: scanLoading ? "not-allowed" : "pointer",
-                  opacity: scanLoading ? 0.6 : 1,
-                }}
-              >
-                <Upload size={18} /> Upload QR
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  disabled={scanLoading}
-                  onChange={handleQRUpload}
-                />
-              </label>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCameraOpen(true)}
+              className="btn btn-emerald"
+              style={{
+                padding: "12px 20px"
+              }}
+              disabled={scanLoading}
+            >
+              <Camera size={20} />
+
+              {scanLoading
+                ? "Processing..."
+                : "Open Camera Scanner"}
+            </button>
           </div>
 
-          {/* Manual token input */}
+          {/* Manual fallback */}
           <form
             onSubmit={handleManualSubmit}
             style={{
+              marginTop: 20,
               display: "flex",
-              gap: 10,
+              gap: 12,
               flexWrap: "wrap",
-              marginTop: 18,
               paddingTop: 16,
-              borderTop: "1px solid rgba(255,255,255,.08)",
+              borderTop:
+                "1px solid rgba(255, 255, 255, 0.08)"
             }}
           >
             <input
               type="text"
               className="input-field"
-              value={manualToken}
-              onChange={(e) => setManualToken(e.target.value)}
               placeholder="Paste worker QR token..."
+              value={manualToken}
+              onChange={(event) =>
+                setManualToken(event.target.value)
+              }
               disabled={scanLoading}
               autoComplete="off"
-              style={{ flex: "1 1 280px", minWidth: 0, maxWidth: "100%" }}
+              style={{
+                flex: "1 1 280px",
+                minWidth: 0
+              }}
             />
+
             <button
               type="submit"
               className="btn btn-glass"
-              disabled={scanLoading || !manualToken.trim()}
+              disabled={!manualToken.trim() || scanLoading}
             >
               <ShieldCheck size={18} />
-              {scanLoading ? "Processing..." : "Process Token"}
+
+              {scanLoading
+                ? "Processing..."
+                : "Process Token"}
             </button>
           </form>
         </div>
       )}
 
-      {/* Global Message */}
-      {message && (
+      {/* -----------------------------------------
+          Feedback
+      ------------------------------------------ */}
+      {scanMsg && (
         <div
           role="status"
           aria-live="polite"
@@ -454,111 +589,177 @@ export default function AttendancePage() {
             marginBottom: 20,
             padding: "12px 14px",
             borderRadius: 12,
-            background: "var(--bg-surface)",
             border: "1px solid var(--border-main)",
-            color: message.startsWith("❌") ? "#f87171" : "#34d399",
+            background: "var(--bg-surface)",
+            fontSize: 14,
             fontWeight: 700,
-            overflowWrap: "anywhere",
+            color: scanMsg.startsWith("❌")
+              ? "#f87171"
+              : "#34d399"
           }}
         >
-          {message}
+          {scanMsg}
         </div>
       )}
 
-      {/* Attendance Table */}
-      <div className="bento-card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* -----------------------------------------
+          Attendance Table
+      ------------------------------------------ */}
+      <div
+        className="bento-card"
+        style={{
+          padding: 0,
+          overflow: "hidden"
+        }}
+      >
         <div
           style={{
+            padding: "18px 20px",
+            borderBottom:
+              "1px solid var(--border-main)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 12,
-            flexWrap: "wrap",
-            padding: "18px 20px",
-            borderBottom: "1px solid var(--border-main)",
+            flexWrap: "wrap"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10
+            }}
+          >
             <Search size={18} />
-            <strong>{isExecutive ? "Recent Employee Attendance" : "My Recent Attendance"}</strong>
+            <strong>
+              {isExecutive
+                ? "Employee Attendance"
+                : "My Attendance"}
+            </strong>
           </div>
+
           <button
             type="button"
             className="btn btn-glass"
             onClick={fetchAttendance}
             disabled={loading}
-            style={{ padding: "8px 12px" }}
+            style={{
+              padding: "8px 12px"
+            }}
           >
-            <RefreshCcw size={15} /> {loading ? "Refreshing..." : "Refresh"}
+            {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
+
         <div
           className="table-responsive"
           style={{
             width: "100%",
-            maxWidth: "100%",
             overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
+            WebkitOverflowScrolling: "touch"
           }}
         >
           <table className="custom-table">
             <thead>
               <tr>
                 <th>Date</th>
+
                 {isExecutive && <th>Employee</th>}
-                <th>Check‑in</th>
-                <th>Check‑out</th>
+
+                <th>Check-in</th>
+                <th>Check-out</th>
                 <th>Method</th>
                 <th>Status</th>
               </tr>
             </thead>
+
             <tbody>
               {loading ? (
                 <tr>
                   <td
                     colSpan={isExecutive ? 6 : 5}
-                    style={{ textAlign: "center", padding: 40, color: "#94a3b8" }}
+                    style={{
+                      textAlign: "center",
+                      padding: 40,
+                      color: "#94a3b8"
+                    }}
                   >
-                    Loading attendance...
+                    Loading attendance records...
                   </td>
                 </tr>
-              ) : visibleAttendance.length === 0 ? (
+              ) : attendance.length === 0 ? (
                 <tr>
                   <td
                     colSpan={isExecutive ? 6 : 5}
-                    style={{ textAlign: "center", padding: 40, color: "#94a3b8" }}
+                    style={{
+                      textAlign: "center",
+                      padding: 40,
+                      color: "#94a3b8"
+                    }}
                   >
-                    No attendance records from the last 24 hours.
+                    No attendance records logged.
                   </td>
                 </tr>
               ) : (
-                visibleAttendance.map((record) => (
-                  <tr key={record._id} className="table-row">
-                    <td style={{ fontWeight: 700 }}>{formatDate(record.date)}</td>
+                attendance.map((record) => (
+                  <tr
+                    key={record._id}
+                    className="table-row"
+                  >
+                    <td
+                      style={{
+                        fontWeight: 700
+                      }}
+                    >
+                      {formatDate(record.date)}
+                    </td>
+
                     {isExecutive && (
                       <td>
-                        <strong style={{ color: "#f8fafc" }}>
+                        <strong
+                          style={{
+                            color: "#f8fafc"
+                          }}
+                        >
                           {record.worker?.name || "Worker"}
                         </strong>
+
                         <span
                           style={{
                             display: "block",
-                            marginTop: 2,
                             fontSize: 12,
                             color: "#94a3b8",
+                            marginTop: 2
                           }}
                         >
                           {record.worker?.jobTitle || ""}
                         </span>
                       </td>
                     )}
-                    <td>{formatTime(record.checkIn)}</td>
-                    <td>{formatTime(record.checkOut)}</td>
+
                     <td>
-                      <span className="badge badge-sky">{record.checkInMethod || "ONLINE"}</span>
+                      {formatTime(record.checkIn)}
                     </td>
+
                     <td>
-                      <span className={statusClass(record.status)}>{record.status}</span>
+                      {formatTime(record.checkOut)}
+                    </td>
+
+                    <td>
+                      <span className="badge badge-sky">
+                        {record.checkInMethod || "QR"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span
+                        className={getStatusClass(
+                          record.status
+                        )}
+                      >
+                        {record.status}
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -568,12 +769,14 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Camera Modal */}
+      {/* -----------------------------------------
+          Camera QR Modal
+      ------------------------------------------ */}
       {isExecutive && (
         <CameraQRScannerModal
           isOpen={isCameraOpen}
-          onClose={() => setIsCameraOpen(false)}
-          onScanSuccess={handleCameraScan}
+          onClose={handleCloseCamera}
+          onScanSuccess={handleScanSuccess}
         />
       )}
     </div>
