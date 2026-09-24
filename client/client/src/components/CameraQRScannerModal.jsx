@@ -68,17 +68,26 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
       if (html5QrCodeRef.current.isScanning) {
         await html5QrCodeRef.current.stop();
       }
-      const cameraConfig = cameraIdOrConstraint || { facingMode: "environment" };
+      let cameraConfig = cameraIdOrConstraint;
+      // Try to auto‑select a back‑facing camera if none supplied
+      if (!cameraConfig) {
+        try {
+          const cameras = await Html5Qrcode.getCameras();
+          const backCamera = cameras.find(c => c.label.toLowerCase().includes('back'));
+          cameraConfig = backCamera ? { deviceId: { exact: backCamera.id } } : { facingMode: "environment" };
+        } catch (e) {
+          console.warn('Failed to get camera list', e);
+          cameraConfig = { facingMode: "environment" };
+        }
+      }
       await html5QrCodeRef.current.start(
         cameraConfig,
         {
-          fps: 12,
-          qrbox: (vw, vh) => {
-            const size = Math.floor(Math.min(vw, vh) * 0.7);
-            return { width: size, height: size };
-          },
+          fps: 20, // higher frame rate for quicker detection
+          // Restrict scan area to speed up processing; 250px square works well on most devices
+          qrbox: { width: 250, height: 250 },
           videoConstraints: {
-            facingMode: "environment",
+            ...cameraConfig,
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
