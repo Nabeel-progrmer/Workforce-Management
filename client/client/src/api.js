@@ -1,12 +1,15 @@
 import axios from "axios";
 
-const defaultApiUrl = import.meta.env.DEV
-  ? "http://localhost:5000/api"
-  : "https://workforce-backen-git-670f96-nabeelnabeelfaisal26-2848s-projects.vercel.app/api";
+// Determine the API base URL. Prefer the VITE_API_URL environment variable if set.
+// Fallback to the production backend URL.
 const configuredApiUrl = import.meta.env.VITE_API_URL;
-const apiUrl = import.meta.env.PROD && configuredApiUrl?.includes("localhost")
-  ? defaultApiUrl
-  : configuredApiUrl || defaultApiUrl;
+const fallbackApiUrl = "https://workforce-backend-rk7c.vercel.app/api";
+// In development, allow overriding with a localhost URL via VITE_API_URL.
+const apiUrl = configuredApiUrl ? configuredApiUrl : fallbackApiUrl;
+// Log the selected API URL for debugging purposes (remove in production builds)
+if (import.meta.env.DEV) {
+  console.log("[API] Using base URL:", apiUrl);
+}
 
 const api = axios.create({
   baseURL: apiUrl,
