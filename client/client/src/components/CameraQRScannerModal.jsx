@@ -24,6 +24,11 @@ export default function CameraQRScannerModal({ isOpen, onClose, onScanSuccess })
   const effectiveFacing = manualFacing || defaultFacing;
 
   useEffect(() => {
+    if (isOpen && isMobile && activeTab === "camera") {
+      startCamera();
+    }
+    // existing logic follows
+    if (isOpen) {
     if (isOpen) {
       enumerateCameras();
     } else {

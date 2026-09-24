@@ -439,6 +439,13 @@ html, body {
 }
 
 /* Modal Overlay */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modal Overlay */
 .modal-overlay {
   position: fixed;
   inset: 0;
