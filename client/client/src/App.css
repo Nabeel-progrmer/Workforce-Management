@@ -1012,3 +1012,301 @@ background: var(--accent-black);
 color: var(--bg-main);
 }
 }
+/* =========================================================
+FINAL MOBILE + HORIZONTAL OVERFLOW FIX
+========================================================= */
+
+/* Prevent page-wide horizontal scrolling */
+html,
+body,
+#root {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+margin: 0;
+overflow-x: clip;
+}
+
+/* Fallback for browsers that do not support clip */
+@supports not (overflow-x: clip) {
+html,
+body,
+#root {
+overflow-x: hidden;
+}
+}
+
+/* Keep the main application inside viewport */
+.dashboard-layout,
+.main-wrapper,
+.page-container,
+.auth-page {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+overflow-x: clip;
+}
+
+/* =========================================================
+AUTH / LOGIN / SIGNUP
+========================================================= */
+
+.auth-page {
+min-height: 100vh;
+min-height: 100dvh;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+padding: 24px 16px;
+
+box-sizing: border-box;
+}
+
+.auth-card {
+width: 100%;
+max-width: 480px;
+min-width: 0;
+
+box-sizing: border-box;
+
+padding: 36px;
+
+overflow: hidden;
+}
+
+/* Form itself must never become wider than card */
+.auth-card form {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+}
+
+/* Prevent long labels/text from forcing overflow */
+.auth-card h1,
+.auth-card h2,
+.auth-card h3,
+.auth-card p,
+.auth-card label,
+.auth-card span,
+.auth-card a {
+max-width: 100%;
+overflow-wrap: anywhere;
+}
+
+/* Inputs/selects/textareas */
+.auth-card input,
+.auth-card select,
+.auth-card textarea {
+display: block;
+
+width: 100%;
+max-width: 100%;
+min-width: 0;
+
+box-sizing: border-box;
+}
+
+/* Buttons */
+.auth-card button {
+max-width: 100%;
+box-sizing: border-box;
+}
+
+/* Common form rows */
+.auth-card .form-row,
+.auth-card .input-row,
+.auth-card .form-group {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+}
+
+/* Any grid/flex inside auth card must be shrinkable */
+.auth-card .row,
+.auth-card .grid,
+.auth-card [class*="row"],
+.auth-card [class*="grid"] {
+min-width: 0;
+max-width: 100%;
+}
+
+/* Make flex children shrink instead of causing overflow */
+.auth-card .form-row > *,
+.auth-card .input-row > * {
+min-width: 0;
+}
+
+/* =========================================================
+AUTH MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+.auth-page {
+align-items: center;
+
+```
+padding: 16px 12px;
+```
+
+}
+
+.auth-card {
+width: 100%;
+max-width: 100%;
+
+```
+padding: 24px 18px;
+
+border-radius: 18px;
+```
+
+}
+}
+
+@media (max-width: 400px) {
+.auth-page {
+padding: 12px 8px;
+}
+
+.auth-card {
+padding: 20px 14px;
+border-radius: 16px;
+}
+
+.auth-card input,
+.auth-card select,
+.auth-card textarea,
+.auth-card button {
+font-size: 14px;
+}
+}
+
+@media (max-width: 340px) {
+.auth-page {
+padding: 10px 6px;
+}
+
+.auth-card {
+padding: 18px 12px;
+}
+}
+
+/* =========================================================
+SIDEBAR MOBILE OVERFLOW FIX
+========================================================= */
+
+@media (max-width: 991px) {
+.sidebar {
+left: 0;
+
+```
+width: min(280px, 86vw);
+max-width: 86vw;
+
+transform: translateX(-100%);
+```
+
+}
+
+.sidebar.sidebar-open {
+transform: translateX(0);
+}
+}
+
+/* =========================================================
+TABLE / CARDS / LONG CONTENT SAFETY
+========================================================= */
+
+.page-container table {
+max-width: 100%;
+}
+
+.page-container pre,
+.page-container code {
+max-width: 100%;
+overflow-x: auto;
+}
+
+.page-container img,
+.page-container video,
+.page-container iframe {
+max-width: 100%;
+}
+
+/* Prevent long URLs/text from creating horizontal overflow */
+.page-container,
+.auth-page,
+.auth-card {
+overflow-wrap: anywhere;
+word-break: break-word;
+}
+
+/* =========================================================
+MOBILE PAGE SAFETY
+========================================================= */
+
+@media (max-width: 767px) {
+.page-container {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+
+```
+padding-left: 14px;
+padding-right: 14px;
+```
+
+}
+
+.navbar {
+width: 100%;
+max-width: 100%;
+min-width: 0;
+}
+
+.nav-left,
+.nav-right {
+min-width: 0;
+}
+
+.nav-right {
+max-width: 48%;
+}
+
+.nav-left h1 {
+max-width: 100%;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+}
+
+/* =========================================================
+EXTRA SMALL DEVICES
+========================================================= */
+
+@media (max-width: 360px) {
+.page-container {
+padding-left: 10px;
+padding-right: 10px;
+}
+
+.navbar {
+padding-left: 10px;
+padding-right: 10px;
+}
+
+.nav-right {
+gap: 5px;
+}
+
+.nav-left {
+max-width: 55%;
+}
+
+.nav-right {
+max-width: 45%;
+}
+}
