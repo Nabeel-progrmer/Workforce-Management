@@ -3,6 +3,7 @@ import { Camera, Clock, QrCode, Search, ShieldCheck } from "lucide-react";
 import { useAuth } from "../App";
 import api from "../api";
 import CameraQRScannerModal from "../components/CameraQRScannerModal";
+import "./AttendancePage.css";
 
 const getErrorMessage = (error, fallback = "Something went wrong.") => {
   return (
