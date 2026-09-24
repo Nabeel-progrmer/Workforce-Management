@@ -3,7 +3,7 @@ import axios from "axios";
 // Determine the API base URL. Prefer the VITE_API_URL environment variable if set.
 // Fallback to the production backend URL.
 const configuredApiUrl = import.meta.env.VITE_API_URL;
-const fallbackApiUrl = "https://workforce-backend-rk7c.vercel.app";
+const fallbackApiUrl = "https://workforce-backend-rk7c.vercel.app/api";
 // In development, allow overriding with a localhost URL via VITE_API_URL.
 const apiUrl = configuredApiUrl ? configuredApiUrl : fallbackApiUrl;
 // Log the selected API URL for debugging purposes (remove in production builds)
