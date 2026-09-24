@@ -705,11 +705,11 @@ Tablet
 .sidebar {
 width: 280px;
 
-```
+
 transform: translateX(-102%);
 
 box-shadow: 18px 0 42px rgba(0, 0, 0, 0.18);
-```
+
 
 }
 
@@ -722,7 +722,7 @@ position: fixed;
 inset: 0;
 z-index: 950;
 
-```
+
 display: block;
 
 border: 0;
@@ -731,7 +731,7 @@ padding: 0;
 background: rgba(0, 0, 0, 0.42);
 
 cursor: pointer;
-```
+
 
 }
 
@@ -745,10 +745,9 @@ position: absolute;
 top: 14px;
 right: 14px;
 
-```
+
 width: 38px;
 height: 38px;
-```
 
 }
 
@@ -805,9 +804,9 @@ flex-direction: column;
 align-items: stretch;
 gap: 14px;
 
-```
+
 margin-bottom: 22px;
-```
+
 
 }
 
@@ -824,22 +823,22 @@ gap: 12px;
 align-items: flex-start;
 gap: 11px;
 
-```
+
 padding: 15px;
 border-radius: 15px;
-```
+
 
 }
 
 .metric-icon {
 flex-basis: 44px;
 
-```
+
 width: 44px;
 height: 44px;
 
 border-radius: 11px;
-```
+
 
 }
 
@@ -961,10 +960,10 @@ padding: 14px;
 .metric-icon {
 flex-basis: 40px;
 
-```
+
 width: 40px;
 height: 40px;
-```
+
 
 }
 
@@ -1146,9 +1145,9 @@ AUTH MOBILE
 .auth-page {
 align-items: center;
 
-```
+
 padding: 16px 12px;
-```
+
 
 }
 
@@ -1156,11 +1155,11 @@ padding: 16px 12px;
 width: 100%;
 max-width: 100%;
 
-```
+
 padding: 24px 18px;
 
 border-radius: 18px;
-```
+
 
 }
 }
@@ -1201,12 +1200,12 @@ SIDEBAR MOBILE OVERFLOW FIX
 .sidebar {
 left: 0;
 
-```
+
 width: min(280px, 86vw);
 max-width: 86vw;
 
 transform: translateX(-100%);
-```
+
 
 }
 
@@ -1253,10 +1252,10 @@ width: 100%;
 max-width: 100%;
 min-width: 0;
 
-```
+
 padding-left: 14px;
 padding-right: 14px;
-```
+
 
 }
 
