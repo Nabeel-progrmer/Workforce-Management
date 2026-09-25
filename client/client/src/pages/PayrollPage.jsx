@@ -89,7 +89,8 @@ export default function PayrollPage() {
       </div>
 
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="custom-table">
+        <div className="table-responsive">
+          <table className="custom-table">
           <thead>
             <tr>
               <th>Period</th>
@@ -149,6 +150,7 @@ export default function PayrollPage() {
             )}
           </tbody>
         </table>
+          </div>
       </div>
 
       {/* Create Payroll Modal */}

@@ -69,7 +69,7 @@ export default function LeavesPage() {
       </div>
 
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="custom-table">
+        <div className="table-responsive"><table className="custom-table">
           <thead>
             <tr>
               <th>Applicant</th>
@@ -122,7 +122,7 @@ export default function LeavesPage() {
               ))
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {showModal && (

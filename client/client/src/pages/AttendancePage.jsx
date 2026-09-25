@@ -343,7 +343,7 @@ export default function AttendancePage() {
             {loading ? "Refreshing…" : "Refresh"}
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="table-responsive overflow-x-auto">
           <table className="min-w-[800px] custom-table">
             <thead>
               <tr>

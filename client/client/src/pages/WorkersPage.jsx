@@ -95,7 +95,7 @@ export default function WorkersPage() {
         <SkeletonTable rows={5} />
       ) : (
         <div className="bento-card" style={{ padding: 0, overflow: "hidden" }}>
-          <table className="custom-table">
+          <div className="table-responsive"><table className="custom-table">
             <thead>
               <tr>
                 <th>Employee</th>
@@ -144,7 +144,7 @@ export default function WorkersPage() {
                 ))
               )}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
