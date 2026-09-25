@@ -24,6 +24,12 @@
   color: #f9fafb;
 }
 
+.attendance-page .attendance-scanner-card:hover,
+.attendance-page .attendance-scanner-card:focus-within {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  color: #f9fafb;
+}
+
 .attendance-page .attendance-scanner-card h3,
 .attendance-page .attendance-scanner-card p {
   color: #f9fafb;
