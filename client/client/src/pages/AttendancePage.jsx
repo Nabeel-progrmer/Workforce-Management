@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Camera, Clock, QrCode, Search, ShieldCheck } from "lucide-react";
 import { useAuth } from "../App";
 import api from "../api";
@@ -11,16 +11,10 @@ import "./AttendancePage.css"; // keep custom css for colours, globals
 const getErrorMessage = (error, fallback = "Something went wrong.") =>
   error?.response?.data?.message || error?.message || fallback;
 
-const getTodayKey = () => new Date().toISOString().slice(0, 10);
-
-const isMobileDevice = () => {
-  if (typeof window === "undefined") return false;
-  const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  const smallViewport = window.matchMedia("(max-width: 768px)").matches;
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(
-    navigator.userAgent || ""
-  );
-  return hasTouch || smallViewport || mobileUA;
+const getTodayKey = () => {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
 };
 
 export default function AttendancePage() {
@@ -32,23 +26,10 @@ export default function AttendancePage() {
   const [manualToken, setManualToken] = useState("");
   const [scanMsg, setScanMsg] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const autoCameraOpenedRef = useRef(false);
 
   const role = user?.role?.toLowerCase() || "";
   const isExecutive = useMemo(() => ["ceo", "manager"].includes(role), [role]);
   const isWorker = role === "worker";
-
-  /* ---------------------------------------------------------------
-     Detect mobile once on mount
-     --------------------------------------------------------------- */
-  useEffect(() => {
-    const updateMobileState = () => setIsMobile(isMobileDevice());
-    updateMobileState();
-    window.addEventListener("resize", updateMobileState);
-    return () => window.removeEventListener("resize", updateMobileState);
-  }, []);
 
   /* ---------------------------------------------------------------
      Fetch attendance data
@@ -72,17 +53,6 @@ export default function AttendancePage() {
   useEffect(() => {
     fetchAttendance();
   }, [fetchAttendance]);
-
-  /* ---------------------------------------------------------------
-     Auto‑open camera for executives on mobile (only once)
-     --------------------------------------------------------------- */
-  useEffect(() => {
-    if (!user || !isExecutive || !isMobile) return;
-    if (!autoCameraOpenedRef.current) {
-      autoCameraOpenedRef.current = true;
-      setIsCameraOpen(true);
-    }
-  }, [user, isExecutive, isMobile]);
 
   /* ---------------------------------------------------------------
      Today record helper (worker only)
@@ -191,12 +161,12 @@ export default function AttendancePage() {
   return (
     <div className="attendance-page">
       {/* Header */}
-      <div className="page-header flex flex-wrap gap-4 items-start justify-between mb-6">
+      <div className="attendance-header page-header flex flex-wrap gap-4 items-start justify-between mb-6">
         <div>
           <span className="badge badge-sky mb-2" style={{ marginBottom: 8 }}>
             REAL‑TIME ATTENDANCE TERMINAL
           </span>
-          <h2 className="text-2xl font-bold">Attendance Log &amp; QR Scanner</h2>
+          <h2 className="text-2xl font-bold">Attendance &amp; QR scanner</h2>
           <p className="text-sm text-gray-500 mt-1">
             {isExecutive
               ? "Scan worker QR badges with your camera or use the manual token fallback."
@@ -343,7 +313,7 @@ export default function AttendancePage() {
             {loading ? "Refreshing…" : "Refresh"}
           </button>
         </div>
-        <div className="table-responsive overflow-x-auto">
+        <div className="table-responsive overflow-x-auto" role="region" aria-label="Attendance records" tabIndex={0}>
           <table className="min-w-[800px] custom-table">
             <thead>
               <tr>

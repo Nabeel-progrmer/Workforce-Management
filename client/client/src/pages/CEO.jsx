@@ -44,7 +44,7 @@ export default function CEO() {
             <SkeletonMetric />
             <SkeletonMetric />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div className="dashboard-card-grid dashboard-card-grid-two">
             <SkeletonCard />
             <SkeletonCard />
           </div>
@@ -86,7 +86,7 @@ export default function CEO() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
+          <div className="dashboard-card-grid">
             {/* Recent Attendance Log */}
             <div className="bento-card">
               <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: 'var(--text-primary)' }}>Today's Check-in Log</h3>

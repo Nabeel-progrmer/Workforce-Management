@@ -1,45 +1,70 @@
-/* AttendancePage responsive styles */
 .attendance-page {
   width: 100%;
   max-width: 1200px;
+  min-width: 0;
   margin: 0 auto;
-  padding: 1rem;
 }
 
-.page-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-.page-header > div {
-  flex: 1 1 250px;
+.attendance-page .attendance-header > div:first-child {
+  flex: 1 1 360px;
+  min-width: 0;
 }
 
-.bento-card {
-  background: var(--bg-card);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+.attendance-page .attendance-header h2 {
+  overflow-wrap: anywhere;
 }
 
-.table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.attendance-page .bento-card {
+  min-width: 0;
 }
 
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
+.attendance-page .table-responsive {
+  border-radius: 0 0 16px 16px;
+}
+
+.attendance-page .custom-table {
+  min-width: 720px;
+}
+
+.attendance-page .table-responsive:focus-visible {
+  outline: 2px solid var(--accent-black);
+  outline-offset: -2px;
+}
+
+.attendance-page [role="status"] {
+  overflow-wrap: anywhere;
+  border-radius: 12px;
+}
+
+@media (max-width: 767px) {
+  .attendance-page .attendance-header > div:first-child,
+  .attendance-page .attendance-header > .btn {
+    flex-basis: 100%;
+  }
+
+  .attendance-page .attendance-header > .btn,
+  .attendance-page .bento-card button {
+    min-height: 48px;
+  }
+
+  .attendance-page .bento-card form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .attendance-page .bento-card form input,
+  .attendance-page .bento-card form button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .attendance-page .bento-card > .flex {
     align-items: stretch;
   }
-  .page-header > div {
-    flex: 1 1 auto;
-  }
-  .bento-card {
-    padding: 1rem;
-  }
+}
+
+@media (max-width: 420px) {
+  .attendance-page .bento-card { padding: 16px; }
+  .attendance-page .custom-table th,
+  .attendance-page .custom-table td { padding: 12px; }
 }

@@ -71,7 +71,7 @@ export default function Manager() {
       </div>
 
       {/* Quick Action Navigation Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+      <div className="dashboard-card-grid">
         <div className="glass-card">
           <div className="metric-icon icon-indigo" style={{ marginBottom: 16 }}><Users size={22} /></div>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f3f4f6' }}>Manage Team Roster</h3>

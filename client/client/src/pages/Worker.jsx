@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { QrCode, CheckSquare, Calendar, CreditCard, Clock, LogIn, LogOut, Sparkles, Smartphone } from "lucide-react";
+import { LogIn, LogOut, Smartphone } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../App";
 import api from "../api";
@@ -27,7 +27,9 @@ export default function Worker() {
         api.get("/workforce/tasks/my")
       ]);
 
-      const todayStr = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+      const todayStr = localDate.toISOString().slice(0, 10);
       const todayRec = attRes.data.attendance?.find((r) => r.date === todayStr);
       setTodayAttendance(todayRec || null);
 
@@ -79,7 +81,7 @@ export default function Worker() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 28 }}>
+      <div className="dashboard-card-grid worker-card-grid">
         {/* Attendance Timer Card */}
         <div className="bento-card" style={{ background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(21, 32, 53, 0.8) 100%)', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: '#38bdf8', letterSpacing: '0.1em' }}>

@@ -34,6 +34,15 @@ export default function DashboardLayout({ children }) {
 
   const handleNavigation = () => setSidebarOpen(false);
 
+  React.useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarOpen]);
+
   const role = (user?.role || "worker").toLowerCase();
 
   const navItems = [
@@ -107,7 +116,7 @@ export default function DashboardLayout({ children }) {
         />
       )}
 
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <aside id="primary-navigation" className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <button
           type="button"
           className="mobile-menu-close"
@@ -169,6 +178,8 @@ export default function DashboardLayout({ children }) {
               type="button"
               className="menu-button"
               aria-label="Open navigation menu"
+              aria-expanded={sidebarOpen}
+              aria-controls="primary-navigation"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={22} />
@@ -178,7 +189,14 @@ export default function DashboardLayout({ children }) {
           </div>
           <div className="nav-right">
             {/* Professional Sliding Switch Theme Toggle */}
-            <div className="theme-switch-container" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}>
+            <button
+              type="button"
+              className="theme-switch-container"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              aria-pressed={theme === "dark"}
+            >
               <div className="theme-switch-track">
                 <Sun size={14} style={{ color: '#fbbf24' }} />
                 <Moon size={14} style={{ color: '#94a3b8' }} />
@@ -186,7 +204,7 @@ export default function DashboardLayout({ children }) {
                   {theme === "light" ? <Sun size={13} /> : <Moon size={13} />}
                 </div>
               </div>
-            </div>
+            </button>
 
             <span className="badge">
               <Sparkles size={13} />
