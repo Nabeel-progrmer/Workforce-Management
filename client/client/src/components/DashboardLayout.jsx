@@ -19,6 +19,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, useTheme } from "../App";
 import WorkforceLogo from "./WorkforceLogo";
+import { getProfileAvatar } from "../constants/profileAvatars";
 
 export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
@@ -154,9 +155,9 @@ export default function DashboardLayout({ children }) {
 
         <div className="sidebar-footer">
           <div className="user-badge">
-            <div className="avatar">
-              {user?.profileImage
-                ? <img src={user.profileImage} alt="" />
+            <div className="avatar" style={user?.avatarId ? { background: getProfileAvatar(user.avatarId).background, fontSize: 20 } : undefined}>
+              {user?.avatarId
+                ? <span aria-hidden="true">{getProfileAvatar(user.avatarId).emoji}</span>
                 : user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <div className="user-badge-info">
@@ -214,9 +215,9 @@ export default function DashboardLayout({ children }) {
             </span>
 
             <div className="user-badge" style={{ padding: '6px 14px' }}>
-              <div className="avatar" style={{ width: 30, height: 30, fontSize: 13 }}>
-                {user?.profileImage
-                  ? <img src={user.profileImage} alt="" />
+              <div className="avatar" style={{ width: 30, height: 30, fontSize: user?.avatarId ? 16 : 13, ...(user?.avatarId ? { background: getProfileAvatar(user.avatarId).background } : {}) }}>
+                {user?.avatarId
+                  ? <span aria-hidden="true">{getProfileAvatar(user.avatarId).emoji}</span>
                   : user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name}</span>

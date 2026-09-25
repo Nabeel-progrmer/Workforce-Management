@@ -1,75 +1,43 @@
-import React, { useRef, useState } from "react";
-import { Building2, Camera, Mail, Shield } from "lucide-react";
+import React, { useState } from "react";
+import { Building2, Mail, Shield } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../App";
 import api from "../api";
+import { getProfileAvatar, PROFILE_AVATARS } from "../constants/profileAvatars";
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
-  const fileInputRef = useRef(null);
-  const [imagePreview, setImagePreview] = useState(user?.profileImage || "");
-  const [selectedImage, setSelectedImage] = useState("");
-  const [photoMessage, setPhotoMessage] = useState("");
-  const [photoError, setPhotoError] = useState(false);
-  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [selectedAvatarId, setSelectedAvatarId] = useState(user?.avatarId || PROFILE_AVATARS[0].id);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
   const qrTokenValue = user?.qrToken || `worker-${user?.id || user?._id || "demo"}`;
+  const selectedAvatar = getProfileAvatar(selectedAvatarId);
+  const savedAvatarId = user?.avatarId || PROFILE_AVATARS[0].id;
 
-  const handleImageSelection = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      setPhotoError(true);
-      setPhotoMessage("Please choose an image file.");
-      return;
-    }
-    if (file.size > 1024 * 1024) {
-      setPhotoError(true);
-      setPhotoMessage("Photo must be 1 MB or smaller.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || "");
-      setImagePreview(dataUrl);
-      setSelectedImage(dataUrl);
-      setPhotoError(false);
-      setPhotoMessage("Photo ready. Save it to update your profile.");
-    };
-    reader.onerror = () => {
-      setPhotoError(true);
-      setPhotoMessage("Could not read this photo. Please choose another one.");
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const saveProfilePhoto = async () => {
-    if (!selectedImage || savingPhoto) return;
+  const saveProfileAvatar = async () => {
+    if (selectedAvatarId === savedAvatarId || savingAvatar) return;
     try {
-      setSavingPhoto(true);
-      const response = await api.patch("/workforce/profile/photo", { profileImage: selectedImage });
+      setSavingAvatar(true);
+      const response = await api.patch("/workforce/profile/avatar", { avatarId: selectedAvatarId });
       const updatedUser = response.data?.user;
       if (updatedUser) {
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
-        setImagePreview(updatedUser.profileImage || selectedImage);
       }
-      setSelectedImage("");
-      setPhotoError(false);
-      setPhotoMessage("Profile photo saved.");
+      setAvatarError(false);
+      setAvatarMessage("Avatar saved to your profile.");
     } catch (error) {
-      setPhotoError(true);
-      setPhotoMessage(error.response?.data?.message || "Could not save your photo. Please try again.");
+      setAvatarError(true);
+      setAvatarMessage(error.response?.data?.message || "Could not save your avatar. Please try again.");
     } finally {
-      setSavingPhoto(false);
+      setSavingAvatar(false);
     }
   };
 
-  const renderAvatar = (size, fontSize, extraStyle = {}) => (
-    <div className="avatar profile-avatar" style={{ width: size, height: size, fontSize, ...extraStyle }}>
-      {imagePreview ? <img src={imagePreview} alt={`${user?.name || "User"} profile`} /> : user?.name?.charAt(0)?.toUpperCase() || "U"}
+  const renderAvatar = (size, extraStyle = {}) => (
+    <div className="avatar profile-avatar" style={{ width: size, height: size, fontSize: size * 0.48, background: selectedAvatar.background, ...extraStyle }} aria-hidden="true">
+      {selectedAvatar.emoji}
     </div>
   );
 
@@ -86,31 +54,37 @@ export default function ProfilePage() {
         {/* Profile Info Details */}
         <div className="bento-card profile-details-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-            {renderAvatar(64, 26, { background: 'linear-gradient(135deg, #38bdf8 0%, #a855f7 100%)' })}
+            {renderAvatar(64)}
             <div>
               <h3>{user?.name}</h3>
               <span className="badge badge-violet">{user?.role?.toUpperCase()} ACCOUNT</span>
             </div>
           </div>
 
-          <div className="profile-photo-controls">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              onChange={handleImageSelection}
-              hidden
-            />
-            <button type="button" className="btn btn-outline" onClick={() => fileInputRef.current?.click()}>
-              <Camera size={17} /> Choose profile photo
-            </button>
-            <span className="profile-photo-hint">JPG, PNG, WEBP or GIF - maximum 1 MB</span>
-            {selectedImage && (
-              <button type="button" className="btn btn-black" onClick={saveProfilePhoto} disabled={savingPhoto}>
-                {savingPhoto ? "Saving photo..." : "Save photo"}
+          <div className="profile-avatar-picker">
+            <p>Choose your profile avatar</p>
+            <div className="profile-avatar-options" role="group" aria-label="Choose a profile avatar">
+              {PROFILE_AVATARS.map((avatar) => (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  className={`profile-avatar-option ${selectedAvatarId === avatar.id ? "selected" : ""}`}
+                  style={{ "--avatar-background": avatar.background }}
+                  aria-label={`${avatar.label} avatar`}
+                  aria-pressed={selectedAvatarId === avatar.id}
+                  onClick={() => { setSelectedAvatarId(avatar.id); setAvatarMessage(""); }}
+                >
+                  {avatar.emoji}
+                </button>
+              ))}
+            </div>
+            <span className="profile-avatar-hint">Selected: {selectedAvatar.label}</span>
+            {selectedAvatarId !== savedAvatarId && (
+              <button type="button" className="btn btn-black" onClick={saveProfileAvatar} disabled={savingAvatar}>
+                {savingAvatar ? "Saving avatar..." : "Save avatar"}
               </button>
             )}
-            {photoMessage && <p className={photoError ? "profile-photo-message error" : "profile-photo-message"} role="status">{photoMessage}</p>}
+            {avatarMessage && <p className={avatarError ? "profile-avatar-message error" : "profile-avatar-message"} role="status">{avatarMessage}</p>}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -146,7 +120,7 @@ export default function ProfilePage() {
             WORKFORCE ERP OFFICIAL BADGE
           </div>
           
-          {renderAvatar(80, 32, { margin: '20px auto 16px', background: 'linear-gradient(135deg, #38bdf8 0%, #10b981 100%)', boxShadow: '0 8px 25px rgba(56, 189, 248, 0.4)' })}
+          {renderAvatar(80, { margin: '20px auto 16px', boxShadow: '0 8px 25px rgba(56, 189, 248, 0.4)' })}
 
           <h3 style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc' }}>{user?.name}</h3>
           <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 2 }}>{user?.jobTitle || "Worker"}</p>
