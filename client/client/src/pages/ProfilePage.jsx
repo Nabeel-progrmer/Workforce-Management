@@ -7,13 +7,13 @@ import { getProfileAvatar, PROFILE_AVATARS } from "../constants/profileAvatars";
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
-  const [selectedAvatarId, setSelectedAvatarId] = useState(user?.avatarId || PROFILE_AVATARS[0].id);
+  const [selectedAvatarId, setSelectedAvatarId] = useState(getProfileAvatar(user?.avatarId).id);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarError, setAvatarError] = useState(false);
   const qrTokenValue = user?.qrToken || `worker-${user?.id || user?._id || "demo"}`;
   const selectedAvatar = getProfileAvatar(selectedAvatarId);
-  const savedAvatarId = user?.avatarId || PROFILE_AVATARS[0].id;
+  const savedAvatarId = getProfileAvatar(user?.avatarId).id;
 
   const saveProfileAvatar = async () => {
     if (selectedAvatarId === savedAvatarId || savingAvatar) return;
@@ -37,7 +37,7 @@ export default function ProfilePage() {
 
   const renderAvatar = (size, extraStyle = {}) => (
     <div className="avatar profile-avatar" style={{ width: size, height: size, fontSize: size * 0.48, background: selectedAvatar.background, ...extraStyle }} aria-hidden="true">
-      {selectedAvatar.emoji}
+      <selectedAvatar.Icon size={Math.round(size * 0.52)} strokeWidth={1.8} />
     </div>
   );
 
@@ -63,8 +63,8 @@ export default function ProfilePage() {
 
           <div className="profile-avatar-picker">
             <p>Choose your profile avatar</p>
-            <div className="profile-avatar-options" role="group" aria-label="Choose a profile avatar">
-              {PROFILE_AVATARS.map((avatar) => (
+          <div className="profile-avatar-options" role="group" aria-label="Choose a profile avatar">
+            {PROFILE_AVATARS.map((avatar) => (
                 <button
                   key={avatar.id}
                   type="button"
@@ -73,10 +73,10 @@ export default function ProfilePage() {
                   aria-label={`${avatar.label} avatar`}
                   aria-pressed={selectedAvatarId === avatar.id}
                   onClick={() => { setSelectedAvatarId(avatar.id); setAvatarMessage(""); }}
-                >
-                  {avatar.emoji}
-                </button>
-              ))}
+              >
+                <avatar.Icon size={24} strokeWidth={1.8} />
+              </button>
+            ))}
             </div>
             <span className="profile-avatar-hint">Selected: {selectedAvatar.label}</span>
             {selectedAvatarId !== savedAvatarId && (

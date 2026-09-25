@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }) {
           <div className="user-badge">
             <div className="avatar" style={user?.avatarId ? { background: getProfileAvatar(user.avatarId).background, fontSize: 20 } : undefined}>
               {user?.avatarId
-                ? <span aria-hidden="true">{getProfileAvatar(user.avatarId).emoji}</span>
+                ? React.createElement(getProfileAvatar(user.avatarId).Icon, { size: 21, strokeWidth: 1.8, "aria-hidden": true })
                 : user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <div className="user-badge-info">
@@ -217,7 +217,7 @@ export default function DashboardLayout({ children }) {
             <div className="user-badge" style={{ padding: '6px 14px' }}>
               <div className="avatar" style={{ width: 30, height: 30, fontSize: user?.avatarId ? 16 : 13, ...(user?.avatarId ? { background: getProfileAvatar(user.avatarId).background } : {}) }}>
                 {user?.avatarId
-                  ? <span aria-hidden="true">{getProfileAvatar(user.avatarId).emoji}</span>
+                  ? React.createElement(getProfileAvatar(user.avatarId).Icon, { size: 16, strokeWidth: 1.8, "aria-hidden": true })
                   : user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name}</span>

@@ -286,10 +286,7 @@ export default function AttendancePage() {
       {scanMsg && (
         <div
           role="status"
-          className="mb-5 p-3 rounded border bg-gray-100 dark:bg-gray-800 text-base font-medium"
-          style={{
-            color: scanMsg.startsWith("❌") ? "#f87171" : "#34d399",
-          }}
+          className={`attendance-feedback mb-5 p-3 rounded border text-base font-medium ${scanMsg.startsWith("❌") ? "error" : "success"}`}
         >
           {scanMsg}
         </div>
@@ -328,13 +325,13 @@ export default function AttendancePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isExecutive ? 6 : 5} className="text-center py-8 text-gray-500">
+                  <td colSpan={isExecutive ? 6 : 5} className="attendance-empty text-center py-8">
                     Loading attendance records…
                   </td>
                 </tr>
               ) : attendance.length === 0 ? (
                 <tr>
-                  <td colSpan={isExecutive ? 6 : 5} className="text-center py-8 text-gray-500">
+                  <td colSpan={isExecutive ? 6 : 5} className="attendance-empty text-center py-8">
                     No attendance records logged.
                   </td>
                 </tr>
@@ -345,7 +342,7 @@ export default function AttendancePage() {
                     {isExecutive && (
                       <td>
                         <strong>{record.worker?.name || "Worker"}</strong>
-                        <span className="block text-sm text-muted mt-1">
+                        <span className="block text-sm attendance-job-title mt-1">
                           {record.worker?.jobTitle || ""}
                         </span>
                       </td>

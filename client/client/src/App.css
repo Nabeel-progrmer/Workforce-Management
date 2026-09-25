@@ -1448,6 +1448,15 @@ input, select, textarea {
   box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--text-primary);
 }
 
+.tasks-page .kanban-column,
+.tasks-page .kanban-card {
+  color: var(--text-primary);
+}
+
+.tasks-page .task-card-footer {
+  border-top: 1px solid var(--border-light);
+}
+
 .profile-avatar-hint,
 .profile-avatar-message {
   width: 100%;

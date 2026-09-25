@@ -69,7 +69,7 @@ export default function TasksPage() {
   const columns = ["Todo", "In Progress", "Completed"];
 
   return (
-    <div>
+    <div className="tasks-page">
       <div className="page-header">
         <div>
           <h2>Workforce Tasks & Kanban Board</h2>
@@ -88,12 +88,12 @@ export default function TasksPage() {
           return (
             <div key={col} className="kanban-column">
               <div className="kanban-header">
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>{col}</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{col}</h3>
                 <span className="badge badge-indigo">{colTasks.length}</span>
               </div>
 
               {colTasks.length === 0 ? (
-                <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 13 }}>
+                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   No tasks in {col} stage.
                 </div>
               ) : (
@@ -105,11 +105,11 @@ export default function TasksPage() {
                       </span>
                     </div>
 
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: '#f3f4f6', marginTop: 4 }}>{t.title}</h4>
-                    <p style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.4 }}>{t.description || "No description."}</p>
+                    <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>{t.title}</h4>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{t.description || "No description."}</p>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <span style={{ fontSize: 12, color: '#6b7280' }}>
+                    <div className="task-card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                         To: {t.assignedTo?.name || "Worker"}
                       </span>
                       <div style={{ display: 'flex', gap: 4 }}>
@@ -136,21 +136,21 @@ export default function TasksPage() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: '#f3f4f6' }}>Assign New Task</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: 'var(--text-primary)' }}>Assign New Task</h3>
             <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 4, display: 'block' }}>TASK TITLE</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>TASK TITLE</label>
                 <input className="input-field" placeholder="e.g. Audit security logs" value={title} onChange={(e) => setTitle(e.target.value)} required />
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 4, display: 'block' }}>DESCRIPTION</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>DESCRIPTION</label>
                 <textarea className="input-field" rows="3" placeholder="Provide task requirements..." value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 4, display: 'block' }}>ASSIGN TO WORKER</label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>ASSIGN TO WORKER</label>
                   <select className="input-field" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} required>
                     <option value="">Select Worker...</option>
                     {workers.map(w => <option key={w._id} value={w._id}>{w.name} ({w.jobTitle})</option>)}
@@ -158,7 +158,7 @@ export default function TasksPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 4, display: 'block' }}>PRIORITY</label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>PRIORITY</label>
                   <select className="input-field" value={priority} onChange={(e) => setPriority(e.target.value)}>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>

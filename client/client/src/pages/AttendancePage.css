@@ -36,6 +36,21 @@
   border-radius: 12px;
 }
 
+.attendance-page .attendance-job-title,
+.attendance-page .attendance-empty {
+  color: var(--text-muted);
+}
+
+.attendance-page .attendance-feedback {
+  border-color: var(--border-light);
+  background: var(--bg-surface);
+}
+
+[data-theme="light"] .attendance-page .attendance-feedback.success { color: #047857; }
+[data-theme="light"] .attendance-page .attendance-feedback.error { color: #b91c1c; }
+[data-theme="dark"] .attendance-page .attendance-feedback.success { color: #34d399; }
+[data-theme="dark"] .attendance-page .attendance-feedback.error { color: #f87171; }
+
 @media (max-width: 767px) {
   .attendance-page .attendance-header > div:first-child,
   .attendance-page .attendance-header > .btn {
