@@ -18,6 +18,31 @@
   min-width: 0;
 }
 
+.attendance-page .attendance-scanner-card {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  color: #f9fafb;
+}
+
+.attendance-page .attendance-scanner-card h3,
+.attendance-page .attendance-scanner-card p {
+  color: #f9fafb;
+}
+
+.attendance-page .attendance-scanner-card p {
+  color: #d1d5db;
+}
+
+.attendance-page .attendance-scanner-card input {
+  border-color: #4b5563;
+  background: #374151;
+  color: #f9fafb;
+}
+
+.attendance-page .attendance-scanner-card input::placeholder {
+  color: #d1d5db;
+}
+
 .attendance-page .table-responsive {
   border-radius: 0 0 16px 16px;
 }

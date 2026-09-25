@@ -238,7 +238,7 @@ export default function AttendancePage() {
       {/* Executive QR Scanner Card */}
       {isExecutive && (
         <div
-          className="bento-card mb-7 p-6 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-lg"
+          className="bento-card attendance-scanner-card mb-7 p-6 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-lg"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
