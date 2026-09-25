@@ -344,8 +344,8 @@ export default function AttendancePage() {
                     <td className="font-semibold">{formatDate(record.date)}</td>
                     {isExecutive && (
                       <td>
-                        <strong className="text-white">{record.worker?.name || "Worker"}</strong>
-                        <span className="block text-sm text-gray-400 mt-1">
+                        <strong>{record.worker?.name || "Worker"}</strong>
+                        <span className="block text-sm text-muted mt-1">
                           {record.worker?.jobTitle || ""}
                         </span>
                       </td>
