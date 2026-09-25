@@ -155,7 +155,9 @@ export default function DashboardLayout({ children }) {
         <div className="sidebar-footer">
           <div className="user-badge">
             <div className="avatar">
-              {user?.name?.charAt(0)?.toUpperCase() || "U"}
+              {user?.profileImage
+                ? <img src={user.profileImage} alt="" />
+                : user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <div className="user-badge-info">
               <h4>{user?.name || "User"}</h4>
@@ -213,7 +215,9 @@ export default function DashboardLayout({ children }) {
 
             <div className="user-badge" style={{ padding: '6px 14px' }}>
               <div className="avatar" style={{ width: 30, height: 30, fontSize: 13 }}>
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                {user?.profileImage
+                  ? <img src={user.profileImage} alt="" />
+                  : user?.name?.charAt(0)?.toUpperCase() || "U"}
               </div>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name}</span>
             </div>

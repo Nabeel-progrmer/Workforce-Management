@@ -1,11 +1,77 @@
-import React from "react";
-import { User, QrCode, Shield, Mail, Phone, Building2, Calendar, Award } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Building2, Camera, Mail, Shield } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../App";
+import api from "../api";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const fileInputRef = useRef(null);
+  const [imagePreview, setImagePreview] = useState(user?.profileImage || "");
+  const [selectedImage, setSelectedImage] = useState("");
+  const [photoMessage, setPhotoMessage] = useState("");
+  const [photoError, setPhotoError] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
   const qrTokenValue = user?.qrToken || `worker-${user?.id || user?._id || "demo"}`;
+
+  const handleImageSelection = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      setPhotoError(true);
+      setPhotoMessage("Please choose an image file.");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      setPhotoError(true);
+      setPhotoMessage("Photo must be 1 MB or smaller.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      setImagePreview(dataUrl);
+      setSelectedImage(dataUrl);
+      setPhotoError(false);
+      setPhotoMessage("Photo ready. Save it to update your profile.");
+    };
+    reader.onerror = () => {
+      setPhotoError(true);
+      setPhotoMessage("Could not read this photo. Please choose another one.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveProfilePhoto = async () => {
+    if (!selectedImage || savingPhoto) return;
+    try {
+      setSavingPhoto(true);
+      const response = await api.patch("/workforce/profile/photo", { profileImage: selectedImage });
+      const updatedUser = response.data?.user;
+      if (updatedUser) {
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setImagePreview(updatedUser.profileImage || selectedImage);
+      }
+      setSelectedImage("");
+      setPhotoError(false);
+      setPhotoMessage("Profile photo saved.");
+    } catch (error) {
+      setPhotoError(true);
+      setPhotoMessage(error.response?.data?.message || "Could not save your photo. Please try again.");
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
+
+  const renderAvatar = (size, fontSize, extraStyle = {}) => (
+    <div className="avatar profile-avatar" style={{ width: size, height: size, fontSize, ...extraStyle }}>
+      {imagePreview ? <img src={imagePreview} alt={`${user?.name || "User"} profile`} /> : user?.name?.charAt(0)?.toUpperCase() || "U"}
+    </div>
+  );
 
   return (
     <div>
@@ -16,41 +82,59 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+      <div className="dashboard-card-grid profile-card-grid">
         {/* Profile Info Details */}
-        <div className="bento-card">
+        <div className="bento-card profile-details-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-            <div className="avatar" style={{ width: 64, height: 64, fontSize: 26, background: 'linear-gradient(135deg, #38bdf8 0%, #a855f7 100%)' }}>
-              {user?.name?.charAt(0)?.toUpperCase() || "U"}
-            </div>
+            {renderAvatar(64, 26, { background: 'linear-gradient(135deg, #38bdf8 0%, #a855f7 100%)' })}
             <div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc' }}>{user?.name}</h3>
+              <h3>{user?.name}</h3>
               <span className="badge badge-violet">{user?.role?.toUpperCase()} ACCOUNT</span>
             </div>
           </div>
 
+          <div className="profile-photo-controls">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleImageSelection}
+              hidden
+            />
+            <button type="button" className="btn btn-outline" onClick={() => fileInputRef.current?.click()}>
+              <Camera size={17} /> Choose profile photo
+            </button>
+            <span className="profile-photo-hint">JPG, PNG, WEBP or GIF - maximum 1 MB</span>
+            {selectedImage && (
+              <button type="button" className="btn btn-black" onClick={saveProfilePhoto} disabled={savingPhoto}>
+                {savingPhoto ? "Saving photo..." : "Save photo"}
+              </button>
+            )}
+            {photoMessage && <p className={photoError ? "profile-photo-message error" : "profile-photo-message"} role="status">{photoMessage}</p>}
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, background: 'rgba(12, 19, 34, 0.7)', borderRadius: 14 }}>
+            <div className="profile-info-row">
               <Mail size={18} style={{ color: '#38bdf8' }} />
               <div>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', fontWeight: 700 }}>EMAIL ADDRESS</span>
-                <strong style={{ fontSize: 14, color: '#f8fafc' }}>{user?.email}</strong>
+                <span className="profile-info-label">EMAIL ADDRESS</span>
+                <strong>{user?.email}</strong>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, background: 'rgba(12, 19, 34, 0.7)', borderRadius: 14 }}>
+            <div className="profile-info-row">
               <Shield size={18} style={{ color: '#34d399' }} />
               <div>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', fontWeight: 700 }}>EMPLOYEE ID CODE</span>
-                <strong style={{ fontSize: 14, color: '#f8fafc' }}>{user?.employeeId || "EMP-WRK-101"}</strong>
+                <span className="profile-info-label">EMPLOYEE ID CODE</span>
+                <strong>{user?.employeeId || "EMP-WRK-101"}</strong>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, background: 'rgba(12, 19, 34, 0.7)', borderRadius: 14 }}>
+            <div className="profile-info-row">
               <Building2 size={18} style={{ color: '#fbbf24' }} />
               <div>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', fontWeight: 700 }}>JOB TITLE & ROLE</span>
-                <strong style={{ fontSize: 14, color: '#f8fafc' }}>{user?.jobTitle || "Employee"}</strong>
+                <span className="profile-info-label">JOB TITLE & ROLE</span>
+                <strong>{user?.jobTitle || "Employee"}</strong>
               </div>
             </div>
           </div>
@@ -62,9 +146,7 @@ export default function ProfilePage() {
             WORKFORCE ERP OFFICIAL BADGE
           </div>
           
-          <div className="avatar" style={{ width: 80, height: 80, fontSize: 32, margin: '20px auto 16px', background: 'linear-gradient(135deg, #38bdf8 0%, #10b981 100%)', boxShadow: '0 8px 25px rgba(56, 189, 248, 0.4)' }}>
-            {user?.name?.charAt(0)?.toUpperCase()}
-          </div>
+          {renderAvatar(80, 32, { margin: '20px auto 16px', background: 'linear-gradient(135deg, #38bdf8 0%, #10b981 100%)', boxShadow: '0 8px 25px rgba(56, 189, 248, 0.4)' })}
 
           <h3 style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc' }}>{user?.name}</h3>
           <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 2 }}>{user?.jobTitle || "Worker"}</p>
