@@ -41,6 +41,19 @@
   color: var(--text-muted);
 }
 
+[data-theme="light"] .attendance-page .custom-table th {
+  color: #52525b !important;
+}
+
+[data-theme="light"] .attendance-page .custom-table td,
+[data-theme="light"] .attendance-page .custom-table td strong {
+  color: #18181b;
+}
+
+[data-theme="dark"] .attendance-page .custom-table th {
+  color: #a1a1aa !important;
+}
+
 .attendance-page .attendance-feedback {
   border-color: var(--border-light);
   background: var(--bg-surface);

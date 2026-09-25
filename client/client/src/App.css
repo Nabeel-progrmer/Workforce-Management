@@ -1453,8 +1453,71 @@ input, select, textarea {
   color: var(--text-primary);
 }
 
+[data-theme="light"] .tasks-page .kanban-header h3,
+[data-theme="light"] .tasks-page .kanban-card h4,
+[data-theme="light"] .tasks-page .kanban-card p,
+[data-theme="light"] .tasks-page .kanban-card span:not(.badge) {
+  color: #18181b !important;
+}
+
+[data-theme="dark"] .tasks-page .kanban-header h3,
+[data-theme="dark"] .tasks-page .kanban-card h4 {
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .tasks-page .kanban-card p,
+[data-theme="dark"] .tasks-page .kanban-card span:not(.badge) {
+  color: #a1a1aa !important;
+}
+
 .tasks-page .task-card-footer {
   border-top: 1px solid var(--border-light);
+}
+
+.department-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+
+.department-assigned-team {
+  padding: 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  background: var(--bg-surface);
+}
+
+.department-team-heading,
+.department-team-heading > span:first-child,
+.department-modal-header,
+.department-assignment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.department-team-heading { color: var(--text-primary); font-size: 13px; font-weight: 700; }
+.department-team-heading > span:first-child { justify-content: flex-start; }
+.department-worker-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.department-worker-chip { padding: 4px 9px; border: 1px solid var(--border-light); border-radius: 999px; color: var(--text-muted); font-size: 11px; }
+.department-no-workers { margin-top: 10px; color: var(--text-muted); font-size: 13px; }
+.department-assign-button { width: 100%; margin-top: 12px; }
+
+.department-modal-header { margin-bottom: 16px; }
+.department-modal-header h3 { color: var(--text-primary); font-size: 20px; font-weight: 800; }
+.department-modal-header p,
+.department-assignment-hint { color: var(--text-muted); font-size: 13px; }
+.department-worker-picker { display: flex; flex-direction: column; gap: 8px; max-height: min(45dvh, 360px); overflow-y: auto; margin: 16px 0; }
+.department-worker-option { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 9px 12px; border: 1px solid var(--border-light); border-radius: 12px; background: var(--bg-surface); color: var(--text-primary); cursor: pointer; }
+.department-worker-option:has(input:checked) { border-color: #2563eb; background: color-mix(in srgb, #2563eb 9%, var(--bg-card)); }
+.department-worker-option input { width: 18px; height: 18px; min-height: 0; flex: 0 0 auto; accent-color: #2563eb; }
+.department-worker-option-info { display: flex; flex-direction: column; min-width: 0; }
+.department-worker-option-info strong { color: var(--text-primary); font-size: 14px; }
+.department-worker-option-info small { color: var(--text-muted); font-size: 12px; }
+.department-assignment-message { margin: 8px 0; color: #047857; font-size: 13px; }
+.department-assignment-message.error { color: #b91c1c; }
+.department-assignment-actions { justify-content: flex-end; margin-top: 16px; }
+
+@media (max-width: 575px) {
+  .department-assignment-actions { flex-direction: column-reverse; }
+  .department-assignment-actions .btn { width: 100%; }
 }
 
 .profile-avatar-hint,
